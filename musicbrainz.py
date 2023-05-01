@@ -19,7 +19,7 @@ def search_artist(artist_name):
 
 
 # Example usage
-artist_name = "2pac"
+artist_name = "Pusha T"
 artist_id = search_artist(artist_name)
 print(f"Artist ID for {artist_name}: {artist_id}")
 
