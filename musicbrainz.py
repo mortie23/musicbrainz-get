@@ -1,6 +1,9 @@
 # %%
 import requests
 import pandas as pd
+import networkx as nx
+import plotly.graph_objects as go
+import plotly.io as pio
 
 
 # %%
@@ -127,15 +130,104 @@ artist_list = [
 all_artist = get_artists(artist_list)
 
 # %%
-get_artist_featuring("Nas")
+mask = all_artist["artist"] != all_artist["artists"]
+
+# apply the mask to the DataFrame to keep only the desired rows
+all_artist = all_artist[mask]
+
+
+# %%
+# Remove duplicates
+# Drop duplicates by the columns 'release_title', 'artist', and 'artists'
+graph_df = all_artist.drop_duplicates(subset=["recording_title", "artist", "artists"])
+
+# Keep only the columns 'release_title', 'artist', and 'artists'
+graph_df = graph_df.loc[:, ["artist", "artists"]]
+# Rename the columns "artist" to "source" and "artists" to "target"
+graph_df = graph_df.rename(columns={"artist": "source", "artists": "target"})
+
 
 # %%
 
+# Create an empty directed graph using the DiGraph() function from NetworkX
+G = nx.DiGraph()
+
+# Create the graph from the dataframe
+G = nx.from_pandas_edgelist(graph_df, source="source", target="target")
+# Generate the positions of the nodes using the spring layout algorithm
+pos = nx.spring_layout(G)
+node_freq = dict(G.degree())
+
+# filter nodes that only have one edge
+filtered_nodes = [node for node in G.nodes() if node_freq[node] > 1]
+# create a new graph with the filtered nodes and edges
+H = G.subgraph(filtered_nodes)
 
 # %%
-base_df = pd.concat([base_df, get_artist_featuring("Ma$e")], ignore_index=True)
-
+for node in H.nodes():
+    print(node_freq.values())
 # %%
-base_df = pd.concat([base_df, get_artist_featuring("Kurupt")], ignore_index=True)
+
+# Create the layout
+layout = go.Layout(title="My Network Graph")
+
+# Create the plotly figure
+fig = go.Figure(
+    data=go.Scatter(
+        x=[],
+        y=[],
+        mode="markers",
+        text=[],
+        hovertemplate="%{text}",
+    )
+)
+
+# Add the edges to the plotly figure
+for edge in H.edges():
+    fig.add_trace(
+        go.Scatter(
+            x=[pos[edge[0]][0], pos[edge[1]][0]],
+            y=[pos[edge[0]][1], pos[edge[1]][1]],
+            mode="lines",
+        )
+    )
+
+# Add the nodes to the plotly figure
+node_x = []
+node_y = []
+node_text = []
+for node in H.nodes():
+    x, y = pos[node]
+    node_x.append(x)
+    node_y.append(y)
+    node_text.append(node)
+fig.add_trace(
+    go.Scatter(
+        x=node_x,
+        y=node_y,
+        mode="markers+text",
+        text=node_text,
+        textposition="middle center",
+        marker=dict(size=[freq for freq in node_freq.values()], color="red"),
+    )
+)
+
+
+# mode="markers",
+# text=node_text,
+# hovertemplate="%{text}",
+# marker=dict(
+#     size=[
+#         freq for freq in node_freq.values()
+#     ],  # set the node size based on frequency
+#     color="blue",
+# )
+
+# Update the layout
+fig.update_layout(layout)
+
+# Assume the Plotly figure is stored in a variable called fig
+# You can write it to an HTML file like this:
+pio.write_html(fig, "my_plotly_figure.html")
 
 # %%
