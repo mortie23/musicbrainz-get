@@ -1,6 +1,9 @@
+# %%
 import requests
+import pandas as pd
 
 
+# %%
 def search_artist(artist_name):
     # Set up the MusicBrainz API endpoint and query parameters
     endpoint = "https://musicbrainz.org/ws/2/artist"
@@ -16,12 +19,6 @@ def search_artist(artist_name):
         return artist_id
     else:
         return None
-
-
-# Example usage
-artist_name = "Pusha T"
-artist_id = search_artist(artist_name)
-print(f"Artist ID for {artist_name}: {artist_id}")
 
 
 def get_artist_songs(artist_id):
@@ -41,8 +38,6 @@ def get_artist_songs(artist_id):
         for release in results["releases"]:
             release_title = release["title"]
             release_id = release["id"]
-            print(release_title)
-            breakpoint()
             for medium in release["media"]:
                 for track in medium["tracks"]:
                     recording_id = track["recording"]["id"]
@@ -71,4 +66,76 @@ def get_artist_songs(artist_id):
     return recordings
 
 
-print(get_artist_songs(artist_id=artist_id))
+def get_artist_featuring(
+    artist_name: str,
+) -> pd.DataFrame:
+    """Get artists songs as a dataframe
+
+    Args:
+        artist_name (str): The name of an artist
+
+    Returns:
+        pd.DataFrame: dataframe with the list of songs and featuring artists
+    """
+    artist_id = search_artist(artist_name)
+    print(f"Artist ID for {artist_name}: {artist_id}")
+    songs = get_artist_songs(artist_id=artist_id)
+    df = pd.DataFrame(songs)
+    df["artist"] = df["artists"].apply(lambda x: x[0])
+    return df.explode("artists")
+
+
+# %%
+def get_artists(
+    artist_list: list,
+) -> pd.DataFrame:
+    base_df = pd.DataFrame(
+        columns=[
+            "recording_id",
+            "recording_title",
+            "release_id",
+            "release_title",
+            "artists",
+            "artist",
+        ]
+    )
+    for artist in artist_list:
+        artist_df = get_artist_featuring(artist)
+        print(len(artist_df))
+        base_df = pd.concat([base_df, artist_df], ignore_index=True)
+        print(len(base_df))
+    return base_df
+
+
+# %%
+artist_list = [
+    "Jay-Z",
+    "Nas",
+    # "Wu-Tang Clan",
+    # "Styles P",
+    # "Jadakiss",
+    # "50 Cent",
+    # "P Diddy",
+    # "Notorious B.I.G.",
+    # "Kanye West",
+    # "Common",
+    # "Talib Kweli",
+    # "Mos Def",
+]
+
+# %%
+all_artist = get_artists(artist_list)
+
+# %%
+get_artist_featuring("Nas")
+
+# %%
+
+
+# %%
+base_df = pd.concat([base_df, get_artist_featuring("Ma$e")], ignore_index=True)
+
+# %%
+base_df = pd.concat([base_df, get_artist_featuring("Kurupt")], ignore_index=True)
+
+# %%

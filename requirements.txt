@@ -1,2 +1,4 @@
 requests
 black
+ipykernel
+pandas

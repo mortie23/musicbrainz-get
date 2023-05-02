@@ -20,3 +20,14 @@
   }
 ]
 ```
+
+## Load data into a pandas dataframe
+
+TODO: Get the data from the JSON into two dataframes.
+A list of songs and a list of artists featuring key pairs.
+
+## Analysis
+
+TODO: I think I will try to use this for connectedness of rappers through featuring:
+
+[https://plotly.com/python/network-graphs/](https://plotly.com/python/network-graphs/)
