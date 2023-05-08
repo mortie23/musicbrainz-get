@@ -1,9 +1,6 @@
 # %%
 import requests
 import pandas as pd
-import networkx as nx
-import plotly.graph_objects as go
-import plotly.io as pio
 
 
 # %%
@@ -114,22 +111,34 @@ def get_artists(
 artist_list = [
     "Jay-Z",
     "Nas",
-    # "Wu-Tang Clan",
-    # "Styles P",
-    # "Jadakiss",
-    # "50 Cent",
-    # "P Diddy",
-    # "Notorious B.I.G.",
-    # "Kanye West",
-    # "Common",
-    # "Talib Kweli",
-    # "Mos Def",
+    "Wu-Tang Clan",
+    "Redman",
+    "The LOX",
+    "Styles P",
+    "Jadakiss",
+    "50 Cent",
+    "Diddy",
+    "Notorious B.I.G.",
+    "Kanye West",
+    "Common",
+    "Talib Kweli",
+    "Mos Def",
+    "2pac",
+    "Snoop Dogg",
+    "Dr Dre",
+    "Kurupt",
+    "Warren G",
+    "Note Dogg",
+    "Tha Dogg Pound",
+    "Daz Dillinger",
 ]
 
 # %%
 all_artist = get_artists(artist_list)
 
 # %%
+# Remove records where the artist in the artist credit list is the recording artist
+# This is so in the network graph does not contain self loop edges
 mask = all_artist["artist"] != all_artist["artists"]
 
 # apply the mask to the DataFrame to keep only the desired rows
@@ -146,88 +155,12 @@ graph_df = graph_df.loc[:, ["artist", "artists"]]
 # Rename the columns "artist" to "source" and "artists" to "target"
 graph_df = graph_df.rename(columns={"artist": "source", "artists": "target"})
 
+# %%
+# Assuming your DataFrame is named 'dataframe'
+result = graph_df.groupby(["source", "target"]).size().reset_index(name="edge_count")
+result = result[result["edge_count"] > 1]
 
 # %%
-
-# Create an empty directed graph using the DiGraph() function from NetworkX
-G = nx.DiGraph()
-
-# Create the graph from the dataframe
-G = nx.from_pandas_edgelist(graph_df, source="source", target="target")
-# Generate the positions of the nodes using the spring layout algorithm
-pos = nx.spring_layout(G)
-node_freq = dict(G.degree())
-
-# filter nodes that only have one edge
-filtered_nodes = [node for node in G.nodes() if node_freq[node] > 1]
-# create a new graph with the filtered nodes and edges
-H = G.subgraph(filtered_nodes)
-
-# %%
-for node in H.nodes():
-    print(node_freq.values())
-# %%
-
-# Create the layout
-layout = go.Layout(title="My Network Graph")
-
-# Create the plotly figure
-fig = go.Figure(
-    data=go.Scatter(
-        x=[],
-        y=[],
-        mode="markers",
-        text=[],
-        hovertemplate="%{text}",
-    )
-)
-
-# Add the edges to the plotly figure
-for edge in H.edges():
-    fig.add_trace(
-        go.Scatter(
-            x=[pos[edge[0]][0], pos[edge[1]][0]],
-            y=[pos[edge[0]][1], pos[edge[1]][1]],
-            mode="lines",
-        )
-    )
-
-# Add the nodes to the plotly figure
-node_x = []
-node_y = []
-node_text = []
-for node in H.nodes():
-    x, y = pos[node]
-    node_x.append(x)
-    node_y.append(y)
-    node_text.append(node)
-fig.add_trace(
-    go.Scatter(
-        x=node_x,
-        y=node_y,
-        mode="markers+text",
-        text=node_text,
-        textposition="middle center",
-        marker=dict(size=[freq for freq in node_freq.values()], color="red"),
-    )
-)
-
-
-# mode="markers",
-# text=node_text,
-# hovertemplate="%{text}",
-# marker=dict(
-#     size=[
-#         freq for freq in node_freq.values()
-#     ],  # set the node size based on frequency
-#     color="blue",
-# )
-
-# Update the layout
-fig.update_layout(layout)
-
-# Assume the Plotly figure is stored in a variable called fig
-# You can write it to an HTML file like this:
-pio.write_html(fig, "my_plotly_figure.html")
+result.to_csv("result.csv", index=False)
 
 # %%
